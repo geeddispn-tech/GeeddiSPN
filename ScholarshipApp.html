@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Geeddispn – Scholarship Guidance for East Africans</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1729;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+  #root{width:100%;max-width:430px;min-height:100vh;background:#F0F4FF;display:flex;flex-direction:column;}
+  @media(min-width:480px){#root{min-height:860px;border-radius:36px;box-shadow:0 40px 100px rgba(0,0,0,0.6);overflow:hidden;}}
+  ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px;}
+  input,textarea,button{font-family:inherit;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo,useRef,useEffect,createContext,useContext}=React;
+
+// ══════════════════════════════════════════════════════════════════
+// TRANSLATIONS
+// ══════════════════════════════════════════════════════════════════
+const APP_NAME = 'Geeddispn';
+const APP_TAGLINE = {
+  en:'Scholarship Guidance for East Africans',
+  sv:'Stipendievägledning för Östafrikaner',
+  so:'Hagaha Deeqaha Bariga Afrika',
+  sw:'Mwongozo wa Ufadhili kwa Waafrika Mashariki',
+};
+
+const THESIS_TYPES = {
+  en:[
+    {id:'bachelor',icon:'🎓',title:"Bachelor's Thesis",local:'Kandidatuppsats (Sweden)',pages:'30–80 pages',duration:'1 semester',color:'#2E75B6',
+     desc:"A Bachelor's thesis is your first major independent academic work. It introduces you to research methodology and academic writing conventions.",
+     structure:['Title Page — full title, your name, institution, date','Abstract — 150–200 words summarising the whole thesis','Table of Contents','Introduction — background, problem statement, purpose, research questions','Literature Review — existing research on your topic','Method — how you collected and analysed data','Results — what you found','Discussion — what it means, limitations, future research','Conclusion — key takeaways','References — all sources in APA / Harvard / Vancouver'],
+     tips:['Choose a topic you are genuinely curious about — you will spend months on it.','Narrow your topic down as much as possible. Broad topics fail.','Write your research question before anything else.','Keep a reference list from day one using Zotero or Mendeley.','Show drafts to your supervisor early and often.','The introduction and conclusion are often written last.','Use hedging language: "suggests", "indicates", "may imply".'],
+     mistakes:['Too broad a topic','No clear research question','Plagiarism — always cite','Ignoring supervisor feedback','Starting too late'],
+     resources:[{name:'Purdue OWL – Academic Writing',url:'https://owl.purdue.edu'},{name:'Skrivguiden.se (Swedish)',url:'https://skrivguiden.se'},{name:'Zotero (free reference manager)',url:'https://www.zotero.org'}]},
+
+    {id:'master',icon:'🏅',title:"Master's Thesis",local:'Masteruppsats / Examensarbete (Sweden)',pages:'60–120 pages',duration:'1–2 semesters',color:'#1F4E79',
+     desc:"A Master's thesis demonstrates your ability to conduct original research independently. It is expected to make a genuine contribution to your field.",
+     structure:['Title Page','Abstract (200–300 words)','Acknowledgements (optional)','Table of Contents','List of Figures/Tables (if applicable)','Introduction — background, gap in literature, purpose, research questions/hypotheses','Theoretical Framework — key theories underpinning your work','Literature Review — critical analysis of existing studies','Methodology — research design, data collection, analysis method, ethical considerations','Results/Findings','Discussion — interpret, compare, limitations','Conclusion — contributions, recommendations, future research','References','Appendices (interview guides, surveys, raw data etc.)'],
+     tips:['Your research question must be original — what has NOT been studied before?','Choose between qualitative, quantitative, or mixed methods early — it shapes everything.','Write the theoretical framework chapter first — it guides your literature review.','Plan your timeline backwards from the submission date.','Ethical approval may be required if you are collecting data from humans.','A Master\'s thesis must cite 30–80+ sources; start your literature search on Google Scholar, SCOPUS, and JSTOR.','Swedish students: check DiVA portal for published theses in your field for structure inspiration.'],
+     mistakes:['Unclear contribution to knowledge','Weak methodology section','Not addressing limitations','Too many sources, too little analysis','Submitting without proofreading'],
+     resources:[{name:'Google Scholar',url:'https://scholar.google.com'},{name:'SCOPUS',url:'https://www.scopus.com'},{name:'DiVA Portal (Swedish theses)',url:'https://www.diva-portal.org'},{name:'Scribbr – Master\'s Thesis Guide',url:'https://www.scribbr.com/category/dissertation/'}]},
+
+    {id:'licentiate',icon:'🔬',title:'Licentiate Thesis',local:'Licentiatavhandling (Sweden/Finland)',pages:'80–150 pages',duration:'2 years',color:'#6A3D9A',
+     desc:'A Licentiate is a research degree between Master\'s and PhD, common in Sweden and Finland. It typically consists of 2–3 published or publishable research articles plus a summarising "kappa" chapter.',
+     structure:['Kappa (Frame essay) — an introductory essay that contextualises the articles:','  • Introduction to the research area','  • Research aims and questions','  • Theoretical background','  • Methodology overview','  • Summary of the included papers','  • Overall discussion and conclusions','Paper 1 — published or manuscript','Paper 2 — published or manuscript','(Optional Paper 3)','References'],
+     tips:['The kappa must weave your papers into a coherent story — do not just summarise them.','Aim to have at least one article accepted in a peer-reviewed journal before submission.','Attend your department\'s licentiate seminars to learn the format.','You will defend your licentiate in a public seminar with an external examiner (opponent).','The licentiate can be "converted" to a PhD by continuing research for 2 more years.'],
+     mistakes:['Kappa reads as a simple summary, not a synthesis','Articles are too disconnected from each other','Neglecting the public defence preparation'],
+     resources:[{name:'Swedish Higher Education Authority (UKÄ)',url:'https://www.uka.se'},{name:'Your university\'s graduate school portal',url:'#'}]},
+
+    {id:'phd',icon:'🏆',title:'PhD Dissertation',local:'Doktorsavhandling / Doctoral Thesis',pages:'150–400 pages (monograph) or 3–5 papers (compilation)',duration:'4–5 years',color:'#C0392B',
+     desc:"A PhD dissertation is the highest level academic work. It must make an original, significant contribution to knowledge in your field. There are two main formats: the monograph (one long book) and the compilation thesis (a kappa + several published articles).",
+     structure:['MONOGRAPH FORMAT:','  1. Introduction — research problem, gap, contribution','  2. Literature Review — comprehensive and critical','  3. Theoretical Framework','  4. Methodology — detailed, justifiable','  5. Results/Findings (may span multiple chapters)','  6. Discussion','  7. Conclusion — contribution, limitations, future work','  8. References','  9. Appendices','','COMPILATION FORMAT (most common in science/medicine):','  1. Kappa (frame essay) — introduces, synthesises, and concludes','  2. Paper I (published article)','  3. Paper II (published article)','  4. Paper III (published article)','  5. Paper IV (manuscript or article)','  … (typically 4–6 papers total)'],
+     tips:['Your PhD supervisor is your most important resource — meet regularly and communicate openly.','Publish papers throughout your PhD, not only at the end.','Attend international conferences to present your work and build your network.','Learn LaTeX or use Word styles — formatting a 300-page document by hand is a nightmare.','Read 10 recently defended theses from your department to understand the expected standard.','Keep a daily writing habit — even 30 minutes a day adds up enormously over 4 years.','Join or start a writing group with other PhD students.','The defence (disputation) is public — prepare a 30-minute presentation of your work.'],
+     mistakes:['Isolation — not communicating with supervisor','No clear original contribution','Trying to solve too big a problem','Neglecting journal publications','Not starting writing early enough'],
+     resources:[{name:'PhD Comics (motivation & community)',url:'https://phdcomics.com'},{name:'Thesis Whisperer Blog',url:'https://thesiswhisperer.com'},{name:'How to Write a PhD Thesis – UNSW',url:'https://www.phys.unsw.edu.au/~jw/thesis.html'},{name:'Scribbr Dissertation Hub',url:'https://www.scribbr.com/category/dissertation/'}]},
+  ],
+  sv:[
+    {id:'bachelor',icon:'🎓',title:'Kandidatuppsats',local:'30–80 sidor | 1 termin',pages:'30–80 sidor',duration:'1 termin',color:'#2E75B6',
+     desc:'Kandidatuppsatsen är ditt första större självständiga akademiska arbete. Den introducerar dig till forskningsmetodik och akademiskt skrivande.',
+     structure:['Titelsida — titel, namn, institution, datum','Sammanfattning (Abstract) — 150–200 ord','Innehållsförteckning','Inledning — bakgrund, problemformulering, syfte, frågeställningar','Litteraturöversikt — tidigare forskning inom ämnet','Metod — hur du samlat in och analyserat data','Resultat — vad du fann','Diskussion — tolkning, begränsningar, framtida forskning','Slutsats — viktigaste slutledningar','Referenslista — alla källor i APA / Harvard'],
+     tips:['Välj ett ämne du genuint är nyfiken på — du tillbringar månader med det.','Avgränsa ämnet så mycket som möjligt. Breda ämnen misslyckas.','Skriv din frågeställning innan allt annat.','Håll en referenslista från dag ett med Zotero eller Mendeley.','Visa utkast för din handledare tidigt och ofta.','Inledning och slutsats skrivs ofta sist.','Använd hedgingspråk: "tyder på", "indikerar", "kan innebära".'],
+     mistakes:['För brett ämne','Ingen tydlig frågeställning','Plagiat — citera alltid','Ignorera handledarens feedback','Börja för sent'],
+     resources:[{name:'Skrivguiden.se',url:'https://skrivguiden.se'},{name:'DiVA Portal – svenska uppsatser',url:'https://www.diva-portal.org'},{name:'Zotero (gratis referenshanterare)',url:'https://www.zotero.org'}]},
+    {id:'master',icon:'🏅',title:'Masteruppsats / Examensarbete',local:'60–120 sidor | 1–2 terminer',pages:'60–120 sidor',duration:'1–2 terminer',color:'#1F4E79',
+     desc:'Masteruppsatsen ska visa din förmåga att genomföra originell forskning självständigt och förväntas bidra genuint till ditt ämnesområde.',
+     structure:['Titelsida','Abstract (200–300 ord)','Tack (valfritt)','Innehållsförteckning','Figurförteckning (vid behov)','Inledning — bakgrund, gap i litteraturen, syfte, frågeställningar','Teoretiskt ramverk','Litteraturöversikt — kritisk analys','Metodologi — forskningsdesign, datainsamling, analys, etik','Resultat','Diskussion — tolkning, jämförelse, begränsningar','Slutsats — bidrag, rekommendationer, framtida forskning','Referenslista','Bilagor'],
+     tips:['Din frågeställning måste vara originell — vad har INTE studerats tidigare?','Välj metod tidigt — kvalitativ, kvantitativ eller mixad.','Skriv det teoretiska ramverket först — det vägleder litteraturöversikten.','Planera din tidslinje bakifrån från inlämningsdatumet.','Etikgranskning kan krävas vid insamling av data från människor.','Sök på Google Scholar, SCOPUS och DiVA för litteratur.'],
+     mistakes:['Oklar kunskapsbidrag','Svag metoddel','Ingen diskussion om begränsningar','För många källor, för lite analys'],
+     resources:[{name:'Skrivguiden.se',url:'https://skrivguiden.se'},{name:'DiVA Portal',url:'https://www.diva-portal.org'},{name:'Google Scholar',url:'https://scholar.google.com'}]},
+    {id:'licentiate',icon:'🔬',title:'Licentiatavhandling',local:'80–150 sidor | 2 år',pages:'80–150 sidor',duration:'2 år',color:'#6A3D9A',
+     desc:'Licentiatexamen är en forskningsexamen mellan master och doktor, vanlig i Sverige och Finland. Den består vanligen av 2–3 artiklar plus en sammanfattande kappa.',
+     structure:['Kappa (sammanfattande introduktionsessä):','  • Inledning till forskningsområdet','  • Syften och frågeställningar','  • Teoretisk bakgrund','  • Metodöversikt','  • Sammanfattning av ingående artiklar','  • Samlad diskussion och slutsatser','Artikel 1 (publicerad eller manuskript)','Artikel 2 (publicerad eller manuskript)','(Valfri artikel 3)','Referenslista'],
+     tips:['Kappan ska väva samman artiklarna till en sammanhängande historia.','Sträva efter att ha minst en artikel antagen i en referentgranskad tidskrift.','Licentiatexamen försvaras i ett offentligt seminarium med extern opponent.','Kan "konverteras" till doktorsexamen med ytterligare 2 års forskning.'],
+     mistakes:['Kappan är bara en sammanfattning, inte en syntes','Artiklarna hänger inte ihop','Dålig förberedelse inför försvaret'],
+     resources:[{name:'UKÄ – Universitetskanslerämbetet',url:'https://www.uka.se'},{name:'Din institutions forskarskola',url:'#'}]},
+    {id:'phd',icon:'🏆',title:'Doktorsavhandling',local:'150–400 sidor | 4–5 år',pages:'150–400 sidor',duration:'4–5 år',color:'#C0392B',
+     desc:'Doktorsavhandlingen är den högsta akademiska nivån. Den måste ge ett originellt och betydande bidrag till kunskapen inom ditt område. Finns som monografi eller sammanläggningsavhandling.',
+     structure:['MONOGRAFIFORMAT:','  1. Inledning','  2. Litteraturöversikt','  3. Teoretiskt ramverk','  4. Metodologi','  5. Resultat','  6. Diskussion','  7. Slutsats','  8. Referenslista','','SAMMANLÄGGNINGSFORMAT (vanligast inom naturvetenskap):','  1. Kappa — introducerar, syntetiserar och sammanfattar','  2. Artikel I','  3. Artikel II','  4. Artikel III','  5. Artikel IV (vanligtvis 4–6 artiklar totalt)'],
+     tips:['Din handledare är din viktigaste resurs — kommunicera öppet.','Publicera artiklar under hela din doktorandtid, inte bara i slutet.','Delta i internationella konferenser.','Lär dig LaTeX eller använd Words formatmallar.','Håll en daglig skrivrutin — 30 minuter per dag ger enorm effekt.','Läs 10 nyligen försvarade avhandlingar från din avdelning.'],
+     mistakes:['Isolation — dålig kontakt med handledaren','Inget tydligt originalitetsanspråk','Börja skriva för sent'],
+     resources:[{name:'DiVA Portal',url:'https://www.diva-portal.org'},{name:'Thesis Whisperer',url:'https://thesiswhisperer.com'},{name:'Scribbr avhandlingsguide',url:'https://www.scribbr.com/category/dissertation/'}]},
+  ],
+  so:[
+    {id:'bachelor',icon:'🎓',title:"Buugga Shahaadada Koowaad",local:'30–80 bog | 1 semester',pages:'30–80 bog',duration:'1 semester',color:'#2E75B6',
+     desc:"Buugga shahaadada koowaad waa shaqadaada ugu weyn ee cilmiyeed ee xor ah. Waxay kugu baraysaa habka cilmi-baarista iyo qoraalka akadeemiga.",
+     structure:['Bogga Cinwaanka','Kooban (Abstract) — 150–200 erayo','Tusmada','Hordhac — asalka, dhibaatada, ujeedada, su\'aalaha cilmi-baarista','Dib u eegista Buugaagta','Hab (Metod)','Natiijooyinka','Doodda','Gabagabada','Liiska Tixraacyada'],
+     tips:['Dooro mawduuc aad runtii xiiseynayso — bilowga waa muhiim.','Xaddidi mawduucaaga — mawduucyada ballaaran way ku fashilmaan.','Qor su\'aashaada cilmi-baarista ka hor wax walba kale.','Hay liiska tixraacyada maalinta koowaad adigoo isticmaalaya Zotero.','Tus daabacooyinka kordhisahaaga hore oo joogto ah.'],
+     mistakes:['Mawduuc aad u baaxad weyn','Aan lahayn su\'aal cilmi-baaris oo cad','Xad-gudub — had iyo jeer tixraac','Iska indha tir talooyinka kordhisaha'],
+     resources:[{name:'Skrivguiden.se',url:'https://skrivguiden.se'},{name:'Zotero',url:'https://www.zotero.org'}]},
+    {id:'master',icon:'🏅',title:"Buugga Master's",local:'60–120 bog | 1–2 semester',pages:'60–120 bog',duration:'1–2 semester',color:'#1F4E79',
+     desc:"Buugga Master's waa cilmi-baaris asli ah oo xor ah oo ay filayaan in ay ka qayb qaadato cilmiga.",
+     structure:['Bogga Cinwaanka','Kooban (200–300 erayo)','Mahad-celin (ikhtiyaari)','Tusmada','Hordhac','Qaab-dhismeedka Aragtida','Dib u eegista Buugaagta','Xeerka Cilmi-baarista','Natiijooyinka','Doodda','Gabagabada','Liiska Tixraacyada','Lifaaqyada'],
+     tips:['Su\'aashaada cilmi-baarista waa inay ahaataa mid asli ah.','Dooro hababka (qualitative, quantitative, mixed) hore.','Akhri 30–80+ xog-ururin si aad u dhisto buugga.','Raadi xog: Google Scholar, SCOPUS, JSTOR.'],
+     mistakes:['Gacan-siin cilmi oo aan cad','Qayb hab ah oo daciif ah','Aan la falanqaynin xaddidaadaha'],
+     resources:[{name:'Google Scholar',url:'https://scholar.google.com'},{name:'Scribbr',url:'https://www.scribbr.com/category/dissertation/'}]},
+    {id:'licentiate',icon:'🔬',title:'Buugga Licentiate (Sweden/Finland)',local:'80–150 bog | 2 sano',pages:'80–150 bog',duration:'2 sano',color:'#6A3D9A',
+     desc:'Licentiate waa heer cilmiyeed u dhaxeeya Master iyo PhD, caadi ah Sweden iyo Finland. Waxay ka kooban tahay 2–3 maqaallo cilmiyeed oo uu la socdo kappa.',
+     structure:['Kappa (farriin horudhac ah)','Maqaalka 1aad','Maqaalka 2aad','(Maqaalka 3aad, haddii jiro)','Liiska Tixraacyada'],
+     tips:['Kappadu waa inay xidho maqaallada si taariikheed ah.','Isku day in aad daabacdo ugu yaraan hal maqaal ka hor difaaca.','Licentiate waxaa lagu difaacaa munaasibad dadweyne.'],
+     mistakes:['Kappa oo ah soo-koobin kaliya','Maqaalladu ma xidna'],
+     resources:[{name:'UKÄ',url:'https://www.uka.se'}]},
+    {id:'phd',icon:'🏆',title:'Buugga PhD (Doktoraadka)',local:'150–400 bog | 4–5 sano',pages:'150–400 bog',duration:'4–5 sano',color:'#C0392B',
+     desc:'Buugga PhD waa heerka ugu sarreeya ee akadeemiga. Waa inuu leeyahay gacan-siin asli ah oo muhiim ah cilmiga.',
+     structure:['QAABKA MONOGRAPH:','  1. Hordhac','  2. Dib u eegista Buugaagta','  3. Qaab-dhismeedka Aragtida','  4. Xeerka Cilmi-baarista','  5. Natiijooyinka','  6. Doodda','  7. Gabagabada','','QAABKA COMPILATION (ugu caadisan cilmiga):','  1. Kappa','  2. Maqaalka I','  3. Maqaalka II','  4. Maqaalka III','  5. Maqaalka IV'],
+     tips:['Kordhisahaagu waa kheyraadkaaga ugu muhiimsan.','Daabac maqaallo inta lagu jiro PhD-gaaga.','Ka qayb gal shirarka caalamiga ah.','Hayso caado qorista maalinlaha ah — xitaa 30 daqiiqo.'],
+     mistakes:['Xiriirka xun ee kordhisaha','Aan lahayn gacan-siin cilmi oo cad','Bilowga qorista oo daahanaya'],
+     resources:[{name:'Thesis Whisperer',url:'https://thesiswhisperer.com'},{name:'Scribbr',url:'https://www.scribbr.com/category/dissertation/'}]},
+  ],
+  sw:[
+    {id:'bachelor',icon:'🎓',title:"Tasnifu ya Shahada (Bachelor's)",local:'Kurasa 30–80 | Semester 1',pages:'Kurasa 30–80',duration:'Semester 1',color:'#2E75B6',
+     desc:"Tasnifu ya shahada ni kazi yako ya kwanza kubwa ya kujitegemea ya kitaaluma. Inakuanzishia mbinu za utafiti na uandishi wa kitaaluma.",
+     structure:['Ukurasa wa Kichwa','Muhtasari (Abstract) — maneno 150–200','Jedwali la Maudhui','Utangulizi — msingi, tatizo, lengo, maswali ya utafiti','Mapitio ya Fasihi','Mbinu (Methodology)','Matokeo','Majadiliano','Hitimisho','Orodha ya Marejeo'],
+     tips:['Chagua mada unayoipenda kweli kweli — utatumia miezi nayo.','Punguza mada iwezekanavyo. Mada pana zinashindwa.','Andika swali la utafiti kabla ya kitu kingine chochote.','Weka orodha ya marejeo tangu siku ya kwanza ukitumia Zotero.','Onyesha rasimu kwa msimamizi wako mapema na mara kwa mara.'],
+     mistakes:['Mada pana sana','Hakuna swali wazi la utafiti','Uigaji — nukuu daima','Kupuuza maoni ya msimamizi'],
+     resources:[{name:'Scribbr – Thesis Guide',url:'https://www.scribbr.com/category/dissertation/'},{name:'Zotero',url:'https://www.zotero.org'},{name:'Purdue OWL',url:'https://owl.purdue.edu'}]},
+    {id:'master',icon:'🏅',title:"Tasnifu ya Uzamili (Master's)",local:'Kurasa 60–120 | Mihula 1–2',pages:'Kurasa 60–120',duration:'Mihula 1–2',color:'#1F4E79',
+     desc:"Tasnifu ya uzamili inaonyesha uwezo wako wa kufanya utafiti wa asili kwa kujitegemea na inatarajiwa kutoa mchango wa kweli katika uwanja wako.",
+     structure:['Ukurasa wa Kichwa','Muhtasari (maneno 200–300)','Shukrani (si lazima)','Jedwali la Maudhui','Utangulizi','Mfumo wa Kinadharia','Mapitio ya Fasihi — uchambuzi muhimu','Mbinu ya Utafiti — muundo, ukusanyaji data, uchambuzi, maadili','Matokeo/Maudhui','Majadiliano','Hitimisho','Marejeo','Viambatisho'],
+     tips:['Swali lako la utafiti lazima liwe la asili.','Chagua mbinu (qualitative/quantitative/mixed) mapema.','Tafuta fasihi: Google Scholar, SCOPUS, JSTOR.','Idhini ya kimaadili inaweza kuhitajika ukikusanya data kutoka kwa watu.'],
+     mistakes:['Mchango usio wazi wa maarifa','Sehemu dhaifu ya mbinu','Kutokujadili mipaka'],
+     resources:[{name:'Google Scholar',url:'https://scholar.google.com'},{name:'Scribbr',url:'https://www.scribbr.com/category/dissertation/'},{name:'Zotero',url:'https://www.zotero.org'}]},
+    {id:'licentiate',icon:'🔬',title:'Tasnifu ya Licentiate (Uswidi/Finland)',local:'Kurasa 80–150 | Miaka 2',pages:'Kurasa 80–150',duration:'Miaka 2',color:'#6A3D9A',
+     desc:'Licentiate ni shahada ya utafiti kati ya Uzamili na PhD, ya kawaida nchini Uswidi na Finland. Inajumuisha makala 2–3 ya kisayansi na sura ya "kappa" inayofupisha.',
+     structure:['Kappa (insha ya utangulizi)','Makala ya 1','Makala ya 2','(Makala ya 3, kama ipo)','Orodha ya Marejeo'],
+     tips:['Kappa lazima iunganishe makala katika hadithi moja.','Jaribu kuchapisha angalau makala moja kabla ya utetezi.','Licentiate inatathminiwa katika semina ya hadharani.'],
+     mistakes:['Kappa ni muhtasari tu, si usanisi','Makala haziunganikani'],
+     resources:[{name:'UKÄ',url:'https://www.uka.se'}]},
+    {id:'phd',icon:'🏆',title:'Tasnifu ya Udaktari (PhD)',local:'Kurasa 150–400 | Miaka 4–5',pages:'Kurasa 150–400',duration:'Miaka 4–5',color:'#C0392B',
+     desc:'Tasnifu ya PhD ni kazi ya juu kabisa ya kitaaluma. Lazima itoe mchango wa asili na muhimu wa maarifa katika uwanja wako.',
+     structure:['MUUNDO WA MONOGRAPH:','  1. Utangulizi','  2. Mapitio ya Fasihi','  3. Mfumo wa Kinadharia','  4. Mbinu','  5. Matokeo','  6. Majadiliano','  7. Hitimisho','','MUUNDO WA MKUSANYO (wa kawaida sayansi):','  1. Kappa','  2. Makala I','  3. Makala II','  4. Makala III','  5. Makala IV'],
+     tips:['Msimamizi wako ni rasilimali yako muhimu zaidi.','Chapisha makala wakati wote wa PhD yako.','Shirikia mikutano ya kimataifa.','Weka tabia ya kuandika kila siku — hata dakika 30.'],
+     mistakes:['Kutengana — mawasiliano mabaya na msimamizi','Hakuna mchango wazi wa asili','Kuanza kuandika baadaye sana'],
+     resources:[{name:'Thesis Whisperer',url:'https://thesiswhisperer.com'},{name:'Scribbr',url:'https://www.scribbr.com/category/dissertation/'}]},
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// SCHOLARSHIPS DATA
+// ══════════════════════════════════════════════════════════════════
+const SCHOLARSHIPS=[
+  {id:'sisgp',name:'Swedish Institute Scholarship (SISGP)',country:'Sweden',flag:'🇸🇪',level:["Master's"],tags:['sweden','masters'],color:'#006AA7',
+   deadline:'Jan 15 (admission) · Feb (scholarship)',funding:'Full tuition + SEK 12,000/mo + SEK 15,000 travel',website:'https://si.se/en/apply/scholarships/swedish-institute-scholarships-for-global-professionals/',somaliNote:true,
+   eligibleCountries:['Ethiopia','Kenya 🇰🇪','Tanzania','Uganda','Rwanda','Egypt','Morocco','Nigeria','Senegal','South Africa','Zambia','Liberia'],
+   requirements:["Citizen of eligible country, liable to pay tuition in Sweden","Bachelor's + admission to eligible Swedish Master's","3,000+ hours documented work experience (max 3 employers)","Demonstrated leadership from work or civil society"],
+   steps:["Research eligible Master's at studyinsweden.se","Apply to universityadmissions.se by January 15","Receive admission offer from a Swedish university","Apply for SISGP at apply-scholarships.si.se (February, ~2 weeks)","Submit motivation letter highlighting leadership & goals","Await results — notifications sent April/May"]},
+  {id:'chevening',name:'Chevening Scholarship (UK)',country:'United Kingdom',flag:'🇬🇧',level:["Master's"],tags:['uk','masters'],color:'#C8102E',
+   deadline:'Typically November each year',funding:'Full tuition + living allowance + return flights + visa',website:'https://www.chevening.org/',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪','Tanzania 🇹🇿','Uganda 🇺🇬','Ethiopia 🇪🇹','Somalia 🇸🇴','Rwanda 🇷🇼','Most African nations'],
+   requirements:["Citizen of a Chevening-eligible country","At least 2 years of work experience","Undergraduate degree equivalent to UK 2:1 or higher","Apply to 3 eligible UK universities simultaneously","Strong English skills (IELTS 6.5+ may be required)"],
+   steps:["Check eligibility at chevening.org","Identify 3 Master's programmes at UK universities","Apply to those universities","Complete Chevening application with 4 essays","Submit by November deadline","Await shortlisting — interviews held in spring"]},
+  {id:'daad',name:'DAAD Scholarship (Germany)',country:'Germany',flag:'🇩🇪',level:["Master's",'PhD'],tags:['germany','masters','phd'],color:'#2D4A22',
+   deadline:'October–November each year',funding:'€934/mo (Master\'s) or €1,200/mo (PhD) + travel + insurance',website:'https://www.daad.de/en/study-and-research-in-germany/scholarships/',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪 (19 scholarships available)','Tanzania 🇹🇿','Uganda 🇺🇬','Ethiopia 🇪🇹','Most African nations'],
+   requirements:['Above-average academic record','Bachelor\'s degree for Master\'s applications','Good English or German (B2/C1)','Max 6 years since last degree','2+ years work experience recommended'],
+   steps:['Browse programmes at daad.de','Check if your programme has DAAD funding','Prepare: CV, motivation letter, transcripts, language certificate','Apply via DAAD portal or directly to university','Await decision (3–5 months before start)']},
+  {id:'rhodes',name:'Rhodes Scholarship – Kenya',country:'Oxford, UK',flag:'🇬🇧',level:["Master's",'PhD'],tags:['uk','masters','phd','kenya'],color:'#003E74',
+   deadline:'Late August (opens June) — rhodeshouse.ox.ac.uk',funding:'Full Oxford fees + living stipend + travel',website:'https://www.rhodeshouse.ox.ac.uk/scholarships/applications/kenya/',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪 — 2 scholarships per year specifically for Kenya'],
+   requirements:['Kenyan citizen aged 19–25','Excellent undergraduate degree results','Demonstrated leadership ability','Commitment to service and giving back'],
+   steps:['Read Kenya requirements at rhodeshouse.ox.ac.uk','Apply for admission to an eligible Oxford course','Complete the Rhodes application online','Submit 2 academic + 1 personal reference letters','Attend interview in Kenya','2 winners announced per year']},
+  {id:'mext',name:'Japanese MEXT Scholarship',country:'Japan',flag:'🇯🇵',level:['Undergraduate',"Master's",'PhD'],tags:['japan','undergraduate','masters','phd'],color:'#BC002D',
+   deadline:'Applications open April–May each year',funding:'Full tuition + monthly stipend + travel',website:'https://www.ke.emb-japan.go.jp/itpr_en/scholarships.html',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪 (Embassy in Nairobi)','Somalia 🇸🇴','Tanzania 🇹🇿','Uganda 🇺🇬','Ethiopia 🇪🇹'],
+   requirements:['Citizen of eligible country; age requirements vary','Good undergraduate degree','Apply through Japanese Embassy — not directly to universities','Pass written exams and interview at Embassy'],
+   steps:['Visit Japanese Embassy Nairobi website for announcement','Collect documents: transcripts, degree, passport, medical','Submit application to Embassy by deadline','Pass primary screening','Take written exams at Embassy','Pass interview']},
+  {id:'turkiye',name:'Türkiye Scholarships',country:'Turkey',flag:'🇹🇷',level:['Undergraduate',"Master's",'PhD'],tags:['turkey','undergraduate','masters','phd'],color:'#E30A17',
+   deadline:'February–March each year',funding:'Full tuition + accommodation + stipend + Turkish language course',website:'https://www.turkiyeburslari.gov.tr',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪','Somalia 🇸🇴','Tanzania 🇹🇿','Uganda 🇺🇬','Ethiopia 🇪🇹','All African nations'],
+   requirements:['Min. 70% score (undergrad); 75% (postgrad)','Age under 21/30/35 (undergrad/Master\'s/PhD)','Valid passport','Apply online only'],
+   steps:['Create account at turkiyeburslari.gov.tr','Choose up to 12 programmes','Upload documents','Submit before deadline','Pass evaluation','Attend interview']},
+  {id:'mastercard',name:'Mastercard Foundation Scholars',country:'Various',flag:'🌍',level:['Undergraduate',"Master's"],tags:['kenya','africa','undergraduate','masters'],color:'#EB001B',
+   deadline:'Varies by partner university',funding:'Full tuition + living expenses + mentorship',website:'https://mastercardfdn.org/en/what-we-do/our-programs/mastercard-foundation-scholars-program/',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪','Somalia 🇸🇴','Tanzania 🇹🇿','Uganda 🇺🇬','Ethiopia 🇪🇹','All African countries'],
+   requirements:['African citizen with academic excellence','Financial need','Commitment to give back to Africa','Apply through one of ~50 partner universities'],
+   steps:['Visit mastercardfdn.org for partner universities','Apply directly to a partner university','Indicate interest in the Scholars Program','Meet admission requirements','Complete scholarship application if shortlisted']},
+  {id:'aga-khan',name:'Aga Khan Foundation Scholarship',country:'Various',flag:'🌍',level:["Master's"],tags:['kenya','africa','masters'],color:'#006940',
+   deadline:'March–May each year — akdn.org',funding:'50% grant + 50% interest-free loan',website:'https://www.akdn.org/our-agencies/aga-khan-foundation/international-scholarship-programme',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪','Uganda 🇺🇬','Tanzania 🇹🇿','And other developing countries'],
+   requirements:['Exceptional academic merit (first class or upper second)','Financial need — cannot self-fund','Commitment to return to home country','Apply to Master\'s at approved universities'],
+   steps:['Check eligibility at akdn.org','Apply to Master\'s at an approved university','Submit Aga Khan Foundation application','Provide financial need documentation','Attend interview if shortlisted']},
+  {id:'eabl',name:'EABL Foundation Scholarship',country:'Kenya',flag:'🇰🇪',level:['Undergraduate'],tags:['kenya','undergraduate'],color:'#1B4D3E',
+   deadline:'August–September — eablfoundation.com',funding:'Full tuition + living stipend (Kenyan universities)',website:'https://www.eablfoundation.com/',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪 citizens only'],
+   requirements:['Kenyan citizen at a Kenyan university','Financial need','B+ or above at KCSE','Community involvement and leadership potential'],
+   steps:['Visit eablfoundation.com for current cycle','Complete online application','Provide KCSE cert, admission letter, national ID','Write personal statement','Attend interview if shortlisted']},
+  {id:'lund-arua',name:'Lund University ARUA Scholarship',country:'Sweden',flag:'🇸🇪',level:["Master's"],tags:['sweden','masters','kenya'],color:'#875E9B',
+   deadline:'January 15',funding:'Tuition fee waiver for high-achieving African students',website:'https://www.lunduniversity.lu.se/admissions/scholarships-and-funding',somaliNote:false,
+   eligibleCountries:['Kenya 🇰🇪','Tanzania 🇹🇿','Uganda 🇺🇬','African ARUA member institutions'],
+   requirements:['High academic achievement at recognised African research university','Admission to eligible Lund Master\'s programme','ARUA affiliation'],
+   steps:['Apply to Lund via universityadmissions.se','Indicate home institution','Automatic scholarship consideration — no separate application','Await notification']},
+];
+
+// ══════════════════════════════════════════════════════════════════
+// CHAT AI
+// ══════════════════════════════════════════════════════════════════
+const FAQ=[
+  {q:['sisgp','swedish institute','si scholarship'],a:'SISGP (Swedish Institute) is fully funded: tuition + SEK 12,000/month + SEK 15,000 travel. Kenya 🇰🇪, Tanzania, Uganda, Ethiopia are all eligible! Apply by Jan 15 (university admission) then Feb (scholarship) at apply-scholarships.si.se.'},
+  {q:['chevening'],a:'Chevening (UK govt) is fully funded for Master\'s. Kenya 🇰🇪, Somalia, Uganda, Tanzania, Ethiopia all eligible. Covers tuition, living, return flights & visa. Deadline: November. Apply to 3 UK universities simultaneously. Visit chevening.org.'},
+  {q:['daad','germany'],a:'DAAD (Germany) offers 19+ scholarships for Kenyan students. €934/month (Master\'s) or €1,200/month (PhD) + travel + health insurance. Deadline Oct–Nov. Need B2/C1 English or German. Apply at daad.de.'},
+  {q:['rhodes','oxford'],a:'Rhodes Scholarship: 2 spots ONLY for Kenyan citizens per year! Fully funded at Oxford. Age 19–25, excellent degree, strong leadership. Deadline late August. Visit rhodeshouse.ox.ac.uk/scholarships/applications/kenya/.'},
+  {q:['mext','japan'],a:'Japanese MEXT Scholarship: fully funded (tuition + stipend + travel). Open to Kenya 🇰🇪, Somalia, Tanzania, Uganda, Ethiopia. Apply through the Japanese Embassy in Nairobi. Opens April–May each year.'},
+  {q:['turkiye','turkey'],a:'Türkiye Scholarships: open to all East African countries. Covers tuition + accommodation + stipend + free Turkish language course. Deadline Feb–March at turkiyeburslari.gov.tr.'},
+  {q:['mastercard'],a:'Mastercard Foundation Scholars: fully funded (tuition + living) for African students including Kenya and Somalia. Apply through ~50 partner universities worldwide. Financial need required. Visit mastercardfdn.org.'},
+  {q:['aga khan'],a:'Aga Khan Foundation Scholarship: for Kenyan, Ugandan, Tanzanian Master\'s students with exceptional grades AND financial need. 50% grant + 50% interest-free loan. ~100 awards globally/year. Deadline March–May at akdn.org.'},
+  {q:['eabl'],a:'EABL Foundation Scholarship: for Kenyan 🇰🇪 undergraduate students ONLY at Kenyan universities. Full tuition + stipend. Need B+ KCSE and financial need. Deadline Aug–Sep at eablfoundation.com.'},
+  {q:['documents','what do i need','requirements'],a:'For most scholarships you need:\n✅ Motivation letter (personalised!)\n✅ Academic transcripts\n✅ Degree certificate(s)\n✅ Passport copy (12+ months valid)\n✅ 2–3 reference letters\n✅ Updated CV\n✅ Language certificate (IELTS/TOEFL if required)\n✅ Work experience documentation\n✅ University admission letter (some scholarships)\n\nGet documents officially translated if not in English.'},
+  {q:['motivation letter','personal statement'],a:'Strong motivation letter tips:\n1️⃣ Tell your personal story briefly\n2️⃣ Show leadership experience with examples\n3️⃣ State clear academic/career goals\n4️⃣ Explain WHY this scholarship and this country\n5️⃣ Show how you will give back to East Africa\n\nKeep it under 1 page. NEVER send a generic letter — always personalise for each scholarship!'},
+  {q:['thesis','dissertation','phd','bachelor','master','licentiate'],a:'Check the Thesis tab for full guidance on all thesis types!\n\n🎓 Bachelor\'s: 30–80 pages, 1 semester\n🏅 Master\'s: 60–120 pages, 1–2 semesters\n🔬 Licentiate: 80–150 pages, 2 years (Sweden/Finland)\n🏆 PhD: 150–400 pages, 4–5 years\n\nAll follow IMRAD or similar structure. Key tip: always start with a clear research question!'},
+  {q:['imrad','academic writing','vetenskaplig','scientific article'],a:'IMRAD structure for scientific articles:\n📐 Introduction — background, gap, purpose, questions\n📐 Method — how you did the research\n📐 Results — what you found\n📐 Discussion — what it means\n\nAlways add an Abstract (summary) at the start and References at the end. Use formal language, cite with APA 7, and check skrivguiden.se for Swedish guidance.'},
+  {q:['kenya','kenyan'],a:'Kenya 🇰🇪 students have EXCELLENT options!\n\n🌟 Top picks:\n• SISGP — Sweden (fully funded Master\'s)\n• Chevening — UK (fully funded Master\'s)\n• DAAD — Germany (19+ spots)\n• Rhodes — Oxford (2 spots/year!)\n• MEXT — Japan\n• Türkiye Scholarships\n• Aga Khan Foundation\n• EABL (local, undergraduate)\n\nUse the Kenya 🇰🇪 filter in the Scholarships tab to see all options!'},
+  {q:['somali','somalia'],a:'Somali 🇸🇴 students can apply to:\n• Chevening (UK) ✅\n• MEXT Japan ✅\n• Türkiye Scholarships ✅\n• Mastercard Foundation ✅\n• For SISGP (Sweden): Somalia is not on the list YET, but Somali students with residency in Kenya, Uganda, Ethiopia etc. may qualify. Keep checking si.se!'},
+  {q:['east africa','tanzania','uganda','ethiopia','rwanda'],a:'Great news — most scholarships in this app cover all East African countries! SISGP (Sweden) covers Kenya, Tanzania, Uganda, Ethiopia, Rwanda. Chevening covers all. DAAD covers most. The Mastercard Foundation and Türkiye Scholarships are open to ALL African nations. Use the Scholarships tab and filter by country to explore.'},
+  {q:['hello','hi','hej','habari','salam','marhaba','hey'],a:'Hello! 👋 I\'m the Geeddispn AI Assistant.\n\nI can help you with:\n🎓 Finding scholarships (Kenya 🇰🇪, Somalia 🇸🇴, East Africa 🌍)\n📋 Application tips & requirements\n✍️ Motivation letter advice\n📚 Thesis writing guidance (Bachelor\'s / Master\'s / PhD)\n\nWhat would you like to know?'},
+  {q:['deadline','when','2026','2027'],a:'Key 2026–2027 deadlines:\n📅 SISGP Sweden — Jan 15 (admission) + Feb (scholarship)\n📅 Chevening UK — November\n📅 DAAD Germany — Oct/Nov\n📅 Rhodes Oxford (Kenya) — Late August\n📅 MEXT Japan — April/May\n📅 Türkiye — Feb/March\n📅 Aga Khan — March/May\n📅 EABL Kenya — Aug/Sep\n\nStart preparing 6–12 months before each deadline!'},
+];
+
+function getAnswer(input){
+  const q=input.toLowerCase();
+  for(const item of FAQ){ if(item.q.some(kw=>q.includes(kw))) return item.a; }
+  const match=SCHOLARSHIPS.find(s=>s.id===q||s.name.toLowerCase().split(' ').some(w=>w.length>4&&q.includes(w)));
+  if(match) return `${match.flag} ${match.name}\n\n📅 Deadline: ${match.deadline}\n💰 Funding: ${match.funding}\n🌍 Eligible: ${match.eligibleCountries.slice(0,5).join(', ')}\n\nTop requirements:\n${match.requirements.slice(0,3).map((r,i)=>`${i+1}. ${r}`).join('\n')}\n\n🔗 ${match.website}`;
+  return "I'm not sure about that. Try asking about:\n• A specific scholarship: 'DAAD', 'Chevening', 'Rhodes Kenya'\n• 'Scholarships for Kenya' or 'Somalia'\n• 'Documents needed'\n• 'Motivation letter tips'\n• 'Thesis writing'\n• 'Deadlines 2026'\n\nOr browse scholarships in the Scholarships tab!";
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CONTEXT
+// ══════════════════════════════════════════════════════════════════
+const LangCtx=createContext();
+function useLang(){return useContext(LangCtx);}
+
+// ══════════════════════════════════════════════════════════════════
+// SHARED UI
+// ══════════════════════════════════════════════════════════════════
+function Card({children,style={}}){return <div style={{background:'#fff',borderRadius:14,padding:16,marginBottom:12,boxShadow:'0 1px 8px rgba(0,0,0,0.07)',...style}}>{children}</div>;}
+function SectionHeader({color,title,sub}){
+  return <div style={{background:color,padding:'28px 20px 22px',color:'#fff',flexShrink:0}}>
+    <div style={{fontSize:22,fontWeight:800,marginBottom:4}}>{title}</div>
+    {sub&&<div style={{fontSize:13,opacity:0.85,lineHeight:'19px'}}>{sub}</div>}
+  </div>;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════════════════════════
+function HomeScreen({setTab}){
+  const {lang,setLang,t}=useLang();
+  const langs=[{code:'en',flag:'🇬🇧',name:'EN'},{code:'sv',flag:'🇸🇪',name:'SV'},{code:'so',flag:'🇸🇴',name:'SO'},{code:'sw',flag:'🇰🇪',name:'SW'}];
+  const tagline=APP_TAGLINE[lang]||APP_TAGLINE.en;
+  const navCards=[
+    {icon:'🎓',label:{en:'Scholarships',sv:'Stipendier',so:'Deeqaha',sw:'Ufadhili'},color:'#1F4E79',tab:'scholarships'},
+    {icon:'📋',label:{en:'Apply Guide',sv:'Ansökan',so:'Codsiga',sw:'Omba'},color:'#2E75B6',tab:'guide'},
+    {icon:'📝',label:{en:'Thesis Guide',sv:'Uppsatsguide',so:'Buugga',sw:'Tasnifu'},color:'#7B2FBE',tab:'thesis'},
+    {icon:'✏️',label:{en:'Academic Writing',sv:'Skrivande',so:'Qorista',sw:'Uandishi'},color:'#37863B',tab:'writing'},
+    {icon:'🤖',label:{en:'Ask AI',sv:'Fråga AI',so:"Su'aal AI",sw:'Uliza AI'},color:'#C0392B',tab:'chat'},
+  ];
+  return(
+    <div style={{flex:1,overflowY:'auto'}}>
+      <div style={{background:'linear-gradient(145deg,#0f1729,#1F4E79)',padding:'44px 20px 26px',color:'#fff'}}>
+        <div style={{fontSize:11,letterSpacing:3,color:'#90CAF9',textTransform:'uppercase',marginBottom:6}}>Welcome to</div>
+        <div style={{fontSize:30,fontWeight:900,letterSpacing:-0.5,marginBottom:4}}>{APP_NAME}</div>
+        <div style={{fontSize:13,color:'#B0D4F1',lineHeight:'20px'}}>{tagline}</div>
+        <div style={{display:'flex',gap:6,marginTop:16,flexWrap:'wrap'}}>
+          {langs.map(l=>(
+            <button key={l.code} onClick={()=>setLang(l.code)}
+              style={{display:'flex',alignItems:'center',gap:4,padding:'5px 12px',borderRadius:20,border:`1.5px solid ${lang===l.code?'#fff':'rgba(255,255,255,0.3)'}`,background:lang===l.code?'rgba(255,255,255,0.2)':'transparent',color:'#fff',fontWeight:lang===l.code?700:400,fontSize:13,cursor:'pointer'}}>
+              <span>{l.flag}</span><span>{l.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:'14px 14px 32px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+          {navCards.map((c,i)=>(
+            <button key={i} onClick={()=>setTab(c.tab)}
+              style={{background:'#fff',borderRadius:14,padding:'14px 12px',display:'flex',flexDirection:'column',gap:6,boxShadow:'0 2px 8px rgba(0,0,0,0.08)',border:'none',borderTop:`3px solid ${c.color}`,cursor:'pointer',textAlign:'left',gridColumn:i===4?'span 2':'auto'}}>
+              <span style={{fontSize:24}}>{c.icon}</span>
+              <span style={{fontSize:13,fontWeight:700,color:c.color}}>{c.label[lang]||c.label.en}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{background:'linear-gradient(135deg,#FFF9E6,#FFF3CD)',borderRadius:12,padding:14,borderLeft:'4px solid #F5A623'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#B8860B',marginBottom:4}}>💡 Tip</div>
+          <div style={{fontSize:13,color:'#555',lineHeight:'19px'}}>
+            {lang==='sv'?'Börja tidigt — de flesta ansökningar öppnar 6–12 månader i förväg. Ansök till 3–5 stipendier samtidigt!':
+             lang==='so'?'Bilow hore — inta badan codsiyadu waxay furmaan 6–12 bilood ka hor. Codsó 3–5 deeqo isla mar ahaanteed!':
+             lang==='sw'?'Anza mapema — maombi mengi yanafunguliwa miezi 6–12 kabla. Omba ufadhili 3–5 kwa wakati mmoja!':
+             'Start early — most applications open 6–12 months before the academic year. Apply to 3–5 scholarships simultaneously!'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCHOLARSHIPS
+// ══════════════════════════════════════════════════════════════════
+function ScholarshipsScreen(){
+  const {lang}=useLang();
+  const [query,setQuery]=useState('');
+  const [filter,setFilter]=useState('all');
+  const [detail,setDetail]=useState(null);
+  const filterLabels={en:{all:'All',sweden:'Sweden',uk:'UK',japan:'Japan',turkey:'Turkey',germany:'Germany',kenya:'Kenya 🇰🇪',masters:"Master's",phd:'PhD',undergraduate:'Undergrad'},
+    sv:{all:'Alla',sweden:'Sverige',uk:'UK',japan:'Japan',turkey:'Turkiet',germany:'Tyskland',kenya:'Kenya 🇰🇪',masters:'Master',phd:'PhD',undergraduate:'Kandidat'},
+    so:{all:'Dhammaan',sweden:'Sweden',uk:'UK',japan:'Jabaan',turkey:'Turkiga',germany:'Jarmal',kenya:'Kenya 🇰🇪',masters:"Master's",phd:'PhD',undergraduate:'Shahaadada 1aad'},
+    sw:{all:'Zote',sweden:'Uswidi',uk:'UK',japan:'Japani',turkey:'Uturuki',germany:'Ujerumani',kenya:'Kenya 🇰🇪',masters:'Uzamili',phd:'PhD',undergraduate:'Shahada'},
+  };
+  const fl=filterLabels[lang]||filterLabels.en;
+  const filters=['all','sweden','uk','japan','turkey','germany','kenya','masters','phd','undergraduate'];
+  const items=useMemo(()=>SCHOLARSHIPS.filter(s=>{
+    const q=query.toLowerCase();
+    const mq=!q||s.name.toLowerCase().includes(q)||s.country.toLowerCase().includes(q)||s.eligibleCountries.join(' ').toLowerCase().includes(q);
+    const mf=filter==='all'||s.tags.includes(filter);
+    return mq&&mf;
+  }),[query,filter]);
+  const heading={en:'Scholarships',sv:'Stipendier',so:'Deeqaha Waxbarasho',sw:'Ufadhili wa Masomo'};
+  if(detail) return <ScholarshipDetail s={detail} onBack={()=>setDetail(null)}/>;
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <SectionHeader color='#1F4E79' title={heading[lang]||heading.en} sub={`${items.length} scholarships · Kenya · Somalia · East Africa · World`}/>
+      <div style={{padding:'10px 12px 0',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',background:'#fff',borderRadius:10,padding:'8px 12px',gap:8,boxShadow:'0 1px 4px rgba(0,0,0,0.07)',marginBottom:8}}>
+          <span>🔍</span>
+          <input value={query} onChange={e=>setQuery(e.target.value)} placeholder={lang==='sw'?'Tafuta ufadhili…':lang==='so'?'Raadi deeqaha…':lang==='sv'?'Sök stipendier…':'Search scholarships…'}
+            style={{flex:1,border:'none',outline:'none',fontSize:14,color:'#333',background:'transparent'}}/>
+          {query&&<button onClick={()=>setQuery('')} style={{border:'none',background:'none',cursor:'pointer',color:'#999'}}>✕</button>}
+        </div>
+        <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:10}}>
+          {filters.map(f=>(
+            <button key={f} onClick={()=>setFilter(f)}
+              style={{flexShrink:0,padding:'5px 12px',borderRadius:20,border:`1.5px solid ${filter===f?'#1F4E79':'#C5D8F0'}`,background:filter===f?'#1F4E79':'#fff',color:filter===f?'#fff':'#555',fontSize:12,fontWeight:filter===f?700:500,cursor:'pointer',whiteSpace:'nowrap'}}>
+              {fl[f]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'0 12px 24px'}}>
+        {items.map(s=>(
+          <button key={s.id} onClick={()=>setDetail(s)}
+            style={{width:'100%',background:'#fff',borderRadius:12,padding:14,marginBottom:10,boxShadow:'0 1px 6px rgba(0,0,0,0.07)',border:'none',borderLeft:`4px solid ${s.color}`,cursor:'pointer',textAlign:'left'}}>
+            <div style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:8}}>
+              <span style={{fontSize:26,lineHeight:'30px'}}>{s.flag}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:s.color,lineHeight:'19px',marginBottom:2}}>{s.name}</div>
+                <div style={{fontSize:11,color:'#888'}}>{s.country} · {s.level.join(', ')}</div>
+              </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{fontSize:11,color:'#666'}}>📅 {s.deadline}</div>
+              <span style={{color:s.color,fontSize:12,fontWeight:600}}>Details ›</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScholarshipDetail({s,onBack}){
+  const {lang}=useLang();
+  const [tab,setTab]=useState('requirements');
+  const labels={req:{en:'Requirements',sv:'Krav',so:'Shuruudaha',sw:'Mahitaji'},how:{en:'How to Apply',sv:'Hur man ansöker',so:'Sida loo codsado',sw:'Jinsi ya Kuomba'},who:{en:'Who\'s Eligible',sv:'Berättigade',so:'Wadamada xaq u leh',sw:'Wanaostahili'},back:{en:'Back',sv:'Tillbaka',so:'Dib',sw:'Rudi'},apply:{en:'Apply Now ↗',sv:'Ansök nu ↗',so:'Codsó hadda ↗',sw:'Omba Sasa ↗'}};
+  const l=(k)=>labels[k]?.[lang]||labels[k]?.en;
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{background:s.color==='#000'?'#222':s.color,padding:'16px 16px 22px',color:'#fff',position:'relative',flexShrink:0,textAlign:'center'}}>
+        <button onClick={onBack} style={{position:'absolute',left:12,top:14,background:'rgba(255,255,255,0.2)',border:'none',color:'#fff',padding:'4px 10px',borderRadius:8,cursor:'pointer',fontSize:13}}>‹ {l('back')}</button>
+        <div style={{fontSize:38,marginBottom:8,marginTop:8}}>{s.flag}</div>
+        <div style={{fontSize:15,fontWeight:800,lineHeight:'21px',marginBottom:4}}>{s.name}</div>
+        <div style={{fontSize:12,opacity:0.8}}>{s.country}</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:14}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+          {[{icon:'💰',label:{en:'Funding',sv:'Finansiering',so:'Maalgelinta',sw:'Ufadhili'},val:s.funding},{icon:'📅',label:{en:'Deadline',sv:'Deadline',so:'Dhamaadka',sw:'Mwisho'},val:s.deadline}].map((m,i)=>(
+            <div key={i} style={{background:'#fff',borderRadius:10,padding:12,boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+              <div style={{fontSize:16,marginBottom:3}}>{m.icon}</div>
+              <div style={{fontSize:10,color:'#999',marginBottom:2}}>{m.label[lang]||m.label.en}</div>
+              <div style={{fontSize:11,color:'#333',fontWeight:600,lineHeight:'16px'}}>{m.val}</div>
+            </div>
+          ))}
+        </div>
+        {s.somaliNote&&<div style={{background:'#FFF9E6',borderLeft:'3px solid #F5A623',borderRadius:8,padding:10,marginBottom:12,fontSize:12,color:'#7A5A00',lineHeight:'18px'}}>⚠️ Somalia is not on the SISGP eligible list currently, but Somali students with residency in an eligible East African country may qualify.</div>}
+        <div style={{display:'flex',background:'#E8F0FA',borderRadius:10,padding:3,marginBottom:10}}>
+          {[{k:'requirements',l:l('req')},{k:'steps',l:l('how')},{k:'countries',l:l('who')}].map(tb=>(
+            <button key={tb.k} onClick={()=>setTab(tb.k)} style={{flex:1,padding:'8px 3px',borderRadius:8,border:'none',background:tab===tb.k?'#fff':'transparent',color:tab===tb.k?'#1F4E79':'#888',fontWeight:tab===tb.k?700:500,fontSize:11,cursor:'pointer',boxShadow:tab===tb.k?'0 1px 4px rgba(0,0,0,0.1)':'none'}}>{tb.l}</button>
+          ))}
+        </div>
+        <Card>
+          {tab==='requirements'&&s.requirements.map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:8,marginBottom:i<s.requirements.length-1?10:0}}>
+              <span style={{color:s.color,flexShrink:0}}>•</span>
+              <span style={{fontSize:13,color:'#444',lineHeight:'19px'}}>{r}</span>
+            </div>
+          ))}
+          {tab==='steps'&&s.steps.map((step,i)=>(
+            <div key={i} style={{display:'flex',gap:10,marginBottom:i<s.steps.length-1?10:0}}>
+              <div style={{width:24,height:24,borderRadius:12,background:s.color==='#000'?'#333':s.color,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <span style={{color:'#fff',fontWeight:700,fontSize:11}}>{i+1}</span>
+              </div>
+              <span style={{fontSize:13,color:'#444',lineHeight:'20px',flex:1}}>{step}</span>
+            </div>
+          ))}
+          {tab==='countries'&&s.eligibleCountries.map((c,i)=>(
+            <div key={i} style={{display:'flex',gap:8,marginBottom:i<s.eligibleCountries.length-1?8:0}}>
+              <span>🌍</span><span style={{fontSize:13,color:'#444'}}>{c}</span>
+            </div>
+          ))}
+        </Card>
+        <a href={s.website} target="_blank" rel="noopener noreferrer"
+          style={{display:'block',background:s.color==='#000'?'#222':s.color,color:'#fff',textAlign:'center',padding:16,borderRadius:12,fontWeight:700,fontSize:15,textDecoration:'none',marginTop:4}}>
+          {l('apply')}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// THESIS GUIDE
+// ══════════════════════════════════════════════════════════════════
+function ThesisScreen(){
+  const {lang}=useLang();
+  const types=THESIS_TYPES[lang]||THESIS_TYPES.en;
+  const [selected,setSelected]=useState(null);
+  const [activeTab,setActiveTab]=useState('structure');
+  const heading={en:'Thesis Writing Guide',sv:'Uppsatsskrivningsguide',so:'Hagaha Qorista Buugga',sw:'Mwongozo wa Uandishi wa Tasnifu'};
+  const sub={en:'Choose your thesis type for full guidance',sv:'Välj din uppsatstyp för fullständig vägledning',so:'Dooro nooca buuggaaga si aad u hesho haga dhammaystiran',sw:'Chagua aina ya tasnifu yako kwa mwongozo kamili'};
+
+  if(selected){
+    const s=types.find(t=>t.id===selected);
+    const tabLabels={en:{structure:'Structure',tips:'Tips',mistakes:'Avoid',resources:'Resources'},sv:{structure:'Struktur',tips:'Tips',mistakes:'Undvik',resources:'Resurser'},so:{structure:'Qaab-dhismeedka',tips:'Talooyin',mistakes:'Ka fogow',resources:'Kheyraadka'},sw:{structure:'Muundo',tips:'Vidokezo',mistakes:'Epuka',resources:'Rasilimali'}};
+    const tl=tabLabels[lang]||tabLabels.en;
+    const tabs=[{k:'structure',l:tl.structure,icon:'📐'},{k:'tips',l:tl.tips,icon:'💡'},{k:'mistakes',l:tl.mistakes,icon:'⚠️'},{k:'resources',l:tl.resources,icon:'🔗'}];
+    return(
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{background:s.color,padding:'16px 16px 20px',color:'#fff',flexShrink:0,position:'relative'}}>
+          <button onClick={()=>setSelected(null)} style={{position:'absolute',left:12,top:14,background:'rgba(255,255,255,0.2)',border:'none',color:'#fff',padding:'4px 10px',borderRadius:8,cursor:'pointer',fontSize:13}}>
+            ‹ {lang==='sv'?'Tillbaka':lang==='so'?'Dib':lang==='sw'?'Rudi':'Back'}
+          </button>
+          <div style={{textAlign:'center',paddingTop:8}}>
+            <div style={{fontSize:36,marginBottom:6}}>{s.icon}</div>
+            <div style={{fontSize:16,fontWeight:800}}>{s.title}</div>
+            <div style={{fontSize:12,opacity:0.85,marginTop:3}}>{s.pages} · {s.duration}</div>
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:14}}>
+          <Card style={{borderLeft:`4px solid ${s.color}`,padding:14}}>
+            <div style={{fontSize:13,color:'#444',lineHeight:'20px'}}>{s.desc}</div>
+          </Card>
+          <div style={{display:'flex',background:'#F0F4FF',borderRadius:10,padding:3,marginBottom:12}}>
+            {tabs.map(tb=>(
+              <button key={tb.k} onClick={()=>setActiveTab(tb.k)}
+                style={{flex:1,padding:'7px 2px',borderRadius:8,border:'none',background:activeTab===tb.k?'#fff':'transparent',color:activeTab===tb.k?s.color:'#888',fontWeight:activeTab===tb.k?700:500,fontSize:10,cursor:'pointer',boxShadow:activeTab===tb.k?'0 1px 4px rgba(0,0,0,0.1)':'none'}}>
+                {tb.icon} {tb.l}
+              </button>
+            ))}
+          </div>
+          <Card>
+            {activeTab==='structure'&&(
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:s.color,marginBottom:10}}>{lang==='sv'?'Rekommenderad struktur':lang==='so'?'Qaab-dhismeedka la talinayo':lang==='sw'?'Muundo Unaopendekezwa':'Recommended Structure'}</div>
+                {s.structure.map((item,i)=>(
+                  <div key={i} style={{display:'flex',gap:8,marginBottom:6,paddingBottom:i<s.structure.length-1?6:0,borderBottom:i<s.structure.length-1?'1px solid #F5F5F5':'none'}}>
+                    {item.startsWith('  ')?
+                      <span style={{fontSize:13,color:'#666',lineHeight:'19px',paddingLeft:16,fontStyle:'italic'}}>{item.trim()}</span>:
+                      <><span style={{color:s.color,fontWeight:700,fontSize:14,flexShrink:0,width:20}}>·</span>
+                      <span style={{fontSize:13,color:'#333',lineHeight:'19px',fontWeight:500}}>{item}</span></>
+                    }
+                  </div>
+                ))}
+              </div>
+            )}
+            {activeTab==='tips'&&(
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:s.color,marginBottom:10}}>💡 {lang==='sv'?'Tips för framgång':lang==='so'?'Talooyin guul u gaarsiiya':lang==='sw'?'Vidokezo vya Mafanikio':'Tips for Success'}</div>
+                {s.tips.map((tip,i)=>(
+                  <div key={i} style={{display:'flex',gap:10,marginBottom:i<s.tips.length-1?10:0}}>
+                    <div style={{width:22,height:22,borderRadius:11,background:s.color,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{color:'#fff',fontWeight:700,fontSize:11}}>{i+1}</span>
+                    </div>
+                    <span style={{fontSize:13,color:'#444',lineHeight:'19px',flex:1}}>{tip}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {activeTab==='mistakes'&&(
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:'#C0392B',marginBottom:10}}>⚠️ {lang==='sv'?'Vanliga misstag att undvika':lang==='so'?'Khaladaadka caadiga ah ee la joogteeyo':lang==='sw'?'Makosa ya Kawaida ya Kuepuka':'Common Mistakes to Avoid'}</div>
+                {s.mistakes.map((m,i)=>(
+                  <div key={i} style={{display:'flex',gap:8,marginBottom:i<s.mistakes.length-1?8:0}}>
+                    <span style={{color:'#C0392B',fontSize:16}}>✗</span>
+                    <span style={{fontSize:13,color:'#444',lineHeight:'19px'}}>{m}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {activeTab==='resources'&&(
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:s.color,marginBottom:10}}>🔗 {lang==='sv'?'Användbara resurser':lang==='so'?'Kheyraadka waxtar leh':lang==='sw'?'Rasilimali Muhimu':'Useful Resources'}</div>
+                {s.resources.map((r,i)=>(
+                  <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:i<s.resources.length-1?'1px solid #F0F4FA':'none',textDecoration:'none'}}>
+                    <span>🔗</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:600,color:s.color}}>{r.name}</div>
+                      <div style={{fontSize:11,color:'#999'}}>{r.url.replace('https://','')}</div>
+                    </div>
+                    <span style={{color:s.color,fontSize:18}}>›</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <SectionHeader color='#7B2FBE' title={heading[lang]||heading.en} sub={sub[lang]||sub.en}/>
+      <div style={{flex:1,overflowY:'auto',padding:14}}>
+        <div style={{background:'#F5F0FF',borderRadius:12,padding:14,marginBottom:14,borderLeft:'4px solid #7B2FBE'}}>
+          <div style={{fontSize:13,color:'#555',lineHeight:'20px'}}>
+            {lang==='sv'?'Välj nedan för att se fullständig vägledning: struktur, tips, vanliga misstag och resurser för varje uppsatstyp.':
+             lang==='so'?'Ka dooro hoos si aad u aragto hagida buuxa: qaab-dhismeedka, talooyin, khaladaadka caadiga ah iyo kheyraadka.':
+             lang==='sw'?'Chagua hapa chini kuona mwongozo kamili: muundo, vidokezo, makosa ya kawaida na rasilimali.':
+             'Choose below to see full guidance: structure, tips, common mistakes, and resources for each thesis type.'}
+          </div>
+        </div>
+        {types.map(type=>(
+          <button key={type.id} onClick={()=>{setSelected(type.id);setActiveTab('structure');}}
+            style={{width:'100%',background:'#fff',borderRadius:14,padding:16,marginBottom:10,display:'flex',alignItems:'center',gap:14,boxShadow:'0 2px 8px rgba(0,0,0,0.07)',border:'none',borderLeft:`5px solid ${type.color}`,cursor:'pointer',textAlign:'left'}}>
+            <span style={{fontSize:34}}>{type.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:15,fontWeight:800,color:type.color,marginBottom:3}}>{type.title}</div>
+              <div style={{fontSize:12,color:'#888',marginBottom:4}}>{type.local}</div>
+              <div style={{display:'flex',gap:8}}>
+                <span style={{background:type.color+'18',color:type.color,fontSize:11,fontWeight:600,padding:'2px 8px',borderRadius:10}}>📄 {type.pages}</span>
+                <span style={{background:'#F0F4FF',color:'#555',fontSize:11,fontWeight:500,padding:'2px 8px',borderRadius:10}}>⏱ {type.duration}</span>
+              </div>
+            </div>
+            <span style={{color:type.color,fontSize:22}}>›</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GUIDE + WRITING (condensed)
+// ══════════════════════════════════════════════════════════════════
+function GuideScreen(){
+  const {lang}=useLang();
+  const steps={en:[{title:'Research Scholarships',desc:'Browse ScholarshipBob, Greatyop, Swedish Institute, DAAD, Chevening. Note requirements and deadlines.'},{title:'Check Eligibility',desc:'Citizenship, academic level, work experience, age limits, language requirements.'},{title:'Gather Documents',desc:'Transcripts, degree certificate, passport, language cert (IELTS/TOEFL), reference letters, CV.'},{title:'Apply for University Admission',desc:'SISGP requires admission first. Apply at universityadmissions.se by January 15 for Sweden.'},{title:'Write a Personalised Motivation Letter',desc:'One page per application. Your story, leadership, goals, and why this scholarship.'},{title:'Submit Your Application',desc:'Before the deadline. Double-check all attachments.'},{title:'Follow Up',desc:'Monitor email. Prepare for interviews. If rejected, ask for feedback and try again.'}],
+    sv:[{title:'Undersök stipendier',desc:'Bläddra på ScholarshipBob, Greatyop, SI, DAAD, Chevening.'},{title:'Kontrollera behörighet',desc:'Medborgarskap, akademisk nivå, arbetslivserfarenhet, åldersgränser, språkkrav.'},{title:'Samla dokument',desc:'Betyg, examensbevis, pass, språkintyg, rekommendationsbrev, CV.'},{title:'Ansök om universitetsantagning',desc:'SISGP kräver antagning. Ansök universityadmissions.se senast 15 januari.'},{title:'Skriv ett personligt motivationsbrev',desc:'En sida per ansökan. Din historia, ledarskap, mål och varför detta stipendium.'},{title:'Skicka in ansökan',desc:'Före deadline. Kontrollera alla bilagor.'},{title:'Följ upp',desc:'Håll koll på mejlen. Förbered dig för intervjuer.'}],
+    so:[{title:'Baadh Deeqaha',desc:'Raadi ScholarshipBob, Greatyop, SI, DAAD, Chevening.'},{title:'Hubi Xaqiijinta',desc:'Dhalashada, heerka tacliinta, khibradda shaqada, xaddidaada da\'da, luqadda.'},{title:'Ururso Dukumeentiyada',desc:'Xeerarka, shahaadooyinka, baasaboorka, shahaadada luqadda, warqadaha tixraaca, CV.'},{title:"Codsó Antagning Jaamacadeed",desc:'SISGP waxay u baahan tahay antagning. Codsó universityadmissions.se ka hor Janaayo 15.'},{title:'Qor Warqad Dhiirrigelinta Gaar ah',desc:'Hal bog codsiga kasta. Sheekadaada, hoggaanka, ujeedooyinka.'},{title:'Gudbi Codsigaaga',desc:'Ka hor taariikhda dhamaadka. Hubi dhammaan dukumeentiyada.'},{title:'Raac Xaaladda',desc:'Hubi emailkaaga. Diyaari wareysiga.'}],
+    sw:[{title:'Tafuta Ufadhili',desc:'Vinjari ScholarshipBob, Greatyop, SI, DAAD, Chevening.'},{title:'Angalia Ustahili',desc:'Uraia, ngazi ya masomo, uzoefu wa kazi, mipaka ya umri, lugha.'},{title:'Kusanya Nyaraka',desc:'Maandishi, vyeti, pasipoti, cheti cha lugha, barua za mapendekezo, CV.'},{title:'Omba Udahili wa Chuo',desc:'SISGP inahitaji udahili kwanza. Omba universityadmissions.se kabla Jan 15.'},{title:'Andika Barua ya Nia Iliyobinafsishwa',desc:'Ukurasa mmoja kwa kila ombi. Hadithi yako, uongozi, malengo.'},{title:'Wasilisha Ombi Lako',desc:'Kabla ya tarehe. Hakikisha viambatisho vyote.'},{title:'Fuatilia',desc:'Angalia barua pepe. Jiandae kwa mahojiano.'}]};
+  const checklist={en:['Motivation letter (personalised)','Academic transcripts','Degree certificate(s)','Passport (12+ months valid)','Reference letters (2–3)','CV / résumé updated','Language certificate if required','Work experience documentation','University admission letter (if needed)','All documents translated if needed'],
+    sv:['Motivationsbrev (personligt)','Akademiska betyg','Examensbevis','Pass (12+ månader giltigt)','Rekommendationsbrev (2–3)','CV uppdaterat','Språkintyg om krävs','Arbetslivsdokumentation','Universitetsantagning (om krävs)','Alla dokument översatta om nödvändigt'],
+    so:['Warqadda dhiirrigelinta (gaar ah)','Xeerarka akadeemiga','Shahaado(yinka)','Baasaboor (12+ bilood)','Warqadaha tixraaca (2–3)','CV la cusboonaysiiyay','Shahaadada luqadda haddii loo baahdo','Dukumeentiga shaqada','Antagning haddii loo baahdo','Dhammaan dukumeentiyadu waa la turjumay'],
+    sw:['Barua ya nia (iliyobinafsishwa)','Maandishi ya masomo','Cheti/vyeti vya shahada','Pasipoti (miezi 12+ uhalali)','Barua za mapendekezo (2–3)','CV iliyosasishwa','Cheti cha lugha kama inahitajika','Hati ya uzoefu wa kazi','Udahili wa chuo kama unahitajika','Nyaraka zimetafsiriwa kama inahitajika']};
+  const [open,setOpen]=useState(null);
+  const [checked,setChecked]=useState({});
+  const done=Object.values(checked).filter(Boolean).length;
+  const sl=steps[lang]||steps.en;
+  const cl=checklist[lang]||checklist.en;
+  const heading={en:'How to Apply',sv:'Hur man ansöker',so:'Sida Loo Codsado',sw:'Jinsi ya Kuomba'};
+  return(
+    <div style={{flex:1,overflowY:'auto'}}>
+      <SectionHeader color='#2E75B6' title={heading[lang]||heading.en} sub={lang==='sv'?'Steg-för-steg-guide för stipendieansökan':lang==='so'?'Tallaabo-tallaabo haga codsiga deeqda':lang==='sw'?'Mwongozo wa hatua kwa hatua wa kuomba ufadhili':'Step-by-step guide for scholarship applications'}/>
+      <div style={{padding:'14px 14px 32px'}}>
+        {sl.map((s,i)=>(
+          <div key={i} style={{background:'#fff',borderRadius:10,marginBottom:8,boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
+            <button onClick={()=>setOpen(open===i?null:i)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:14,border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}>
+              <div style={{width:28,height:28,borderRadius:14,background:'#2E75B6',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <span style={{color:'#fff',fontWeight:700,fontSize:13}}>{i+1}</span>
+              </div>
+              <span style={{flex:1,fontSize:14,fontWeight:600,color:'#222'}}>{s.title}</span>
+              <span style={{color:'#aaa',fontSize:12}}>{open===i?'▲':'▼'}</span>
+            </button>
+            {open===i&&<div style={{padding:'0 14px 14px 52px',fontSize:13,color:'#555',lineHeight:'20px',borderTop:'1px solid #F0F4FA'}}>{s.desc}</div>}
+          </div>
+        ))}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:20,marginBottom:6}}>
+          <div style={{fontSize:14,fontWeight:700,color:'#1F4E79'}}>✅ {lang==='sv'?'Checklista':lang==='so'?'Liiska Hubinta':lang==='sw'?'Orodha ya Ukaguzi':'Checklist'}</div>
+          <div style={{fontSize:13,fontWeight:700,color:'#2E75B6'}}>{done}/{cl.length}</div>
+        </div>
+        <div style={{height:5,background:'#D8E8F8',borderRadius:3,marginBottom:10}}>
+          <div style={{height:'100%',background:'#27AE60',borderRadius:3,width:`${(done/cl.length)*100}%`,transition:'width 0.3s'}}/>
+        </div>
+        <Card style={{padding:0}}>
+          {cl.map((item,i)=>(
+            <label key={i} onClick={()=>setChecked(p=>({...p,[i]:!p[i]}))} style={{display:'flex',alignItems:'center',gap:12,padding:'10px 14px',borderBottom:i<cl.length-1?'1px solid #F0F4FA':'none',cursor:'pointer'}}>
+              <div style={{width:22,height:22,borderRadius:5,border:`2px solid ${checked[i]?'#27AE60':'#C5D8F0'}`,background:checked[i]?'#27AE60':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                {checked[i]&&<span style={{color:'#fff',fontWeight:700,fontSize:13}}>✓</span>}
+              </div>
+              <span style={{fontSize:13,color:checked[i]?'#aaa':'#444',textDecoration:checked[i]?'line-through':'none'}}>{item}</span>
+            </label>
+          ))}
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function WritingScreen(){
+  const {lang}=useLang();
+  const [sec,setSec]=useState('imrad');
+  const G='#37863B';
+  const imrad={en:[{part:'Abstract',desc:'Summary (150–250 words) — purpose, method, findings, conclusion.'},{part:'Introduction',desc:'Background, research gap, aim, research questions.'},{part:'Method',desc:'How you conducted the research — detailed enough to replicate.'},{part:'Results',desc:'Objective findings using tables and figures.'},{part:'Discussion',desc:'Interpret results, compare with existing research, acknowledge limitations.'},{part:'Conclusion',desc:'Key findings and future research directions.'},{part:'References',desc:'All cited sources in APA 7 or required style.'}],
+    sv:[{part:'Abstract',desc:'Sammanfattning (150–250 ord) — syfte, metod, fynd, slutsats.'},{part:'Introduktion',desc:'Bakgrund, forskningsgap, syfte, frågeställningar.'},{part:'Metod',desc:'Hur du genomförde forskningen — replikerbart.'},{part:'Resultat',desc:'Objektiva fynd med tabeller och diagram.'},{part:'Diskussion',desc:'Tolka resultat, jämför med forskning, erkänn begränsningar.'},{part:'Slutsats',desc:'Nyckelfynd och framtida forskning.'},{part:'Referenslista',desc:'Alla citerade källor i APA 7.'}],
+    so:[{part:'Abstract (Kooban)',desc:'Soo koobid (150–250 erayo) — ujeedada, habka, natiijooyinka, gabagabada.'},{part:'Hordhac',desc:'Asalka, farqiga cilmi-baarista, ujeedada, su\'aalaha.'},{part:'Hab',desc:'Sida aad u sameysay cilmi-baaristaada.'},{part:'Natiijooyin',desc:'Soo gudbi natiijooyinka si dabiici ah.'},{part:'Doodda',desc:'Sharax natiijooyinka, kula bar cilmi-baarista hore.'},{part:'Gabagabo',desc:'Natiijooyinka ugu muhiimsan iyo cilmi-baaris mustaqbalka.'},{part:'Liiska Tixraacyada',desc:'Dhammaan ilaha la soo xigay APA 7.'}],
+    sw:[{part:'Muhtasari',desc:'Muhtasari (maneno 150–250) — madhumuni, mbinu, matokeo, hitimisho.'},{part:'Utangulizi',desc:'Msingi, pengo la utafiti, lengo, maswali.'},{part:'Mbinu',desc:'Jinsi ulivyofanya utafiti — kwa undani wa kutosha.'},{part:'Matokeo',desc:'Matokeo ya lengo ukitumia jedwali na takwimu.'},{part:'Majadiliano',desc:'Tafsiri matokeo, linganisha na utafiti wa awali.'},{part:'Hitimisho',desc:'Matokeo muhimu na mapendekezo.'},{part:'Marejeo',desc:'Vyanzo vyote vilivyonukuliwa kwa APA 7.'}]};
+  const resources=[{name:'Skrivguiden.se',url:'https://skrivguiden.se'},{name:'Stockholm University Writing Centre',url:'https://www.su.se/utbildning/studera-vid-universitetet/studie--och-sprakverkstaden'},{name:'Linnaeus University – Skriva akademiskt',url:'https://lnu.se/ub/sjalvstudieguider/Skriva-akademiskt'},{name:'Purdue OWL – Academic Writing',url:'https://owl.purdue.edu'},{name:'Zotero – Free Reference Manager',url:'https://www.zotero.org'}];
+  const secLabels={en:['IMRAD','Language','Citations','Tips','Resources'],sv:['IMRAD','Språk','Källor','Tips','Resurser'],so:['IMRAD','Luqad','Tixraac','Talooyin','Kheyraad'],sw:['IMRAD','Lugha','Marejeo','Vidokezo','Rasilimali']};
+  const sl=secLabels[lang]||secLabels.en;
+  const secs=[{k:'imrad',icon:'📐',l:sl[0]},{k:'language',icon:'✍️',l:sl[1]},{k:'citations',icon:'📚',l:sl[2]},{k:'tips',icon:'💡',l:sl[3]},{k:'resources',icon:'🔗',l:sl[4]}];
+  const heading={en:'Academic Writing',sv:'Akademiskt skrivande',so:'Qorista Akadeemiga',sw:'Uandishi wa Kitaaluma'};
+  const langTips={en:["Use formal, impersonal language — 'This study indicates…' not 'I think…'","Be precise and concise.","Define technical terms when first used.","Use hedging: 'may', 'suggests', 'indicates'.","Avoid contractions (don't → do not)."],sv:["Använd formellt, opersonligt språk — 'Studien indikerar…' inte 'Jag tror…'",'Var precis och koncis.','Definiera termer när de förekommer för första gången.',"Använd hedgingspråk: 'kan', 'tyder på'.",'Undvik talspråk.'],so:["Isticmaal luqad rasmi ah — 'Cilmi-baaristu waxay muujinaysaa…'",'Ahaow saxan oo kooban.','Qeex ereyada farsamada marka ugu horeysa.',"Isticmaal: 'waxa suurtogalka ah', 'waxay tilmaamaysaa'.",'Ka fogow luqadda carrabka.'],sw:["Tumia lugha rasmi — 'Utafiti huu unaonyesha…' si 'Nadhani…'","Kuwa sahihi na mfupi.","Fafanua istilahi za kiufundi zinapotokea kwanza.","Tumia tahadhari: 'inaweza', 'inapendekeza'.","Epuka mikataba (don't → do not)."]};
+  const citeTips={en:["Cite all sources — uncited ideas = plagiarism.","APA 7: (Author, Year) in-text.","Direct quote: add page — (Smith, 2023, p. 45).","Reference list: alphabetical, end of document.","Use Zotero (free) or Mendeley."],sv:["Citera alltid — ocitaterade idéer = plagiat.","APA 7: (Författare, År).",'Direkt citat: lägg till sidnummer — (Smith, 2023, s. 45).','Referenslista: alfabetisk ordning.','Använd Zotero (gratis) eller Mendeley.'],so:["Had iyo jeer tixraac — xad-gudub.",'APA 7: (Qore, Sanad).','Xigasho toos ah: ku dar bogga — (Smith, 2023, bog. 45).','Liiska tixraacyada: alifbato.','Isticmaal Zotero (bilaash) ama Mendeley.'],sw:["Nukuu vyanzo daima — bila nukuu = wizi wa kifikira.","APA 7: (Mwandishi, Mwaka).","Nukuu ya moja kwa moja: ukurasa — (Smith, 2023, uk. 45).","Orodha ya marejeo: alfabeti, mwisho.","Tumia Zotero (bure) au Mendeley."]};
+  const writeTips={en:['Read published articles in your field before starting.','Write the abstract last.','Draft a core sentence (10–14 words) summarising your finding.','Use JSTOR, Google Scholar, SCOPUS, SwePub.','Ask your supervisor for early feedback.','Use the university writing centre for language help.','Check for plagiarism with Urkund/Ouriginal.'],sv:['Läs publicerade artiklar i ditt ämne.','Skriv abstractet sist.','Formulera en kärnmening (10–14 ord).','Använd JSTOR, Google Scholar, SCOPUS, SwePub.','Be handledaren om tidig feedback.','Utnyttja skrivverkstaden.','Kontrollera plagiat med Urkund/Ouriginal.'],so:['Akhri maqaallo la daabacay ee xagga adiga.','Qor abstractka ugu dambays.','Qor jumle asaasiya (10–14 erayo).','Isticmaal JSTOR, Google Scholar, SCOPUS, SwePub.','Weydii kordhisaha ra\'yi hore.','Isticmaal xarunta qorista.','Hubi xad-gudubka adoo isticmaalaya Urkund/Ouriginal.'],sw:['Soma makala zilizochapishwa katika uwanja wako.','Andika muhtasari mwishowe.','Tunga sentensi kuu (maneno 10–14).','Tumia JSTOR, Google Scholar, SCOPUS, SwePub.','Omba maoni ya msimamizi mapema.','Tumia kituo cha uandishi.','Kagua uigaji kwa Urkund/Ouriginal.']};
+  const il=imrad[lang]||imrad.en;
+  const ll=langTips[lang]||langTips.en;
+  const ctl=citeTips[lang]||citeTips.en;
+  const wtl=writeTips[lang]||writeTips.en;
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <SectionHeader color={G} title={heading[lang]||heading.en} sub='IMRAD · APA 7 · Skrivguiden · Academic Style'/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        <div style={{display:'flex',gap:6,overflowX:'auto',padding:'10px 14px 6px'}}>
+          {secs.map(s=>(
+            <button key={s.k} onClick={()=>setSec(s.k)}
+              style={{flexShrink:0,display:'flex',alignItems:'center',gap:4,padding:'6px 12px',borderRadius:20,border:`1.5px solid ${sec===s.k?G:'#C5D8C5'}`,background:sec===s.k?G:'#fff',color:sec===s.k?'#fff':'#555',fontSize:12,fontWeight:sec===s.k?700:500,cursor:'pointer'}}>
+              {s.icon} {s.l}
+            </button>
+          ))}
+        </div>
+        <div style={{padding:'6px 14px 32px'}}>
+          {sec==='imrad'&&<Card>
+            {il.map((item,i)=>(
+              <div key={i} style={{display:'flex',gap:12,paddingBottom:10,borderBottom:i<il.length-1?'1px solid #F0F4FA':'none',marginBottom:i<il.length-1?10:0}}>
+                <div style={{width:24,height:24,borderRadius:12,background:G,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <span style={{color:'#fff',fontWeight:700,fontSize:11}}>{i+1}</span>
+                </div>
+                <div><div style={{fontSize:13,fontWeight:700,color:G,marginBottom:2}}>{item.part}</div><div style={{fontSize:12,color:'#555',lineHeight:'18px'}}>{item.desc}</div></div>
+              </div>
+            ))}
+          </Card>}
+          {sec==='language'&&<Card>{ll.map((t,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ll.length-1?10:0}}><span style={{color:G}}>•</span><span style={{fontSize:13,color:'#444',lineHeight:'19px',flex:1}}>{t}</span></div>)}</Card>}
+          {sec==='citations'&&<Card>
+            {ctl.map((t,i)=><div key={i} style={{display:'flex',gap:8,marginBottom:i<ctl.length-1?10:0}}><span>📎</span><span style={{fontSize:13,color:'#444',lineHeight:'19px',flex:1}}>{t}</span></div>)}
+            <div style={{background:'#F5FAF5',borderRadius:8,padding:12,marginTop:12}}>
+              <div style={{fontSize:13,fontWeight:700,color:G,marginBottom:8}}>APA 7 Quick Guide</div>
+              {[['Book:','Author, A. A. (Year). Title. Publisher.'],['Article:','Author, A. A. (Year). Title. Journal, Vol(Issue), pages.'],['Website:','Author. (Year, Month Day). Title. URL']].map(([l,v],i)=><div key={i} style={{fontSize:12,color:'#444',marginBottom:4}}><b>{l}</b> {v}</div>)}
+            </div>
+          </Card>}
+          {sec==='tips'&&<Card>{wtl.map((t,i)=><div key={i} style={{display:'flex',gap:10,marginBottom:i<wtl.length-1?10:0}}><div style={{width:22,height:22,borderRadius:11,background:G,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{color:'#fff',fontWeight:700,fontSize:11}}>{i+1}</span></div><span style={{fontSize:13,color:'#444',lineHeight:'19px',flex:1}}>{t}</span></div>)}</Card>}
+          {sec==='resources'&&<Card>{resources.map((r,i)=><a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:i<resources.length-1?'1px solid #F0F4FA':'none',textDecoration:'none'}}><span>🔗</span><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:G}}>{r.name}</div><div style={{fontSize:11,color:'#999'}}>{r.url.replace('https://','')}</div></div><span style={{color:G,fontSize:16}}>›</span></a>)}</Card>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHAT
+// ══════════════════════════════════════════════════════════════════
+function ChatScreen(){
+  const {lang}=useLang();
+  const greeting=lang==='sw'?'Habari! 👋 Mimi ni Msaidizi wa Geeddispn.\n\nNinaweza kukusaidia na:\n🎓 Ufadhili (Kenya 🇰🇪, Somalia 🇸🇴, Afrika Mashariki 🌍)\n📝 Uandishi wa tasnifu (Bachelor\'s / Master\'s / PhD)\n✍️ Uandishi wa kitaaluma\n📋 Vidokezo vya maombi\n\nNiulize chochote!':
+    lang==='so'?'Salaan! 👋 Waxaan ahay Kalkaaliyaha Geeddispn.\n\nWaxaan kaa caawin karaa:\n🎓 Deeqaha (Kenya 🇰🇪, Soomaaliya 🇸🇴, Bariga Afrika 🌍)\n📝 Qorista buuggaaga (Bachelor\'s / Master\'s / PhD)\n✍️ Qorista akadeemiga\n📋 Talooyin codsiga\n\nWax kasta i weydii!':
+    lang==='sv'?'Hej! 👋 Jag är Geeddispn-assistenten.\n\nJag kan hjälpa dig med:\n🎓 Stipendier (Kenya 🇰🇪, Somalia 🇸🇴, Östafrika 🌍)\n📝 Uppsatsskrivning (Kandidat / Master / PhD)\n✍️ Akademiskt skrivande\n📋 Ansökningstips\n\nFråga mig vad som helst!':
+    'Hello! 👋 I\'m the Geeddispn Assistant.\n\nI can help you with:\n🎓 Scholarships (Kenya 🇰🇪, Somalia 🇸🇴, East Africa 🌍)\n📝 Thesis writing (Bachelor\'s / Master\'s / PhD)\n✍️ Academic writing & IMRAD\n📋 Application tips & deadlines\n\nAsk me anything!';
+  const [messages,setMessages]=useState([{from:'bot',text:greeting}]);
+  const [input,setInput]=useState('');
+  const [thinking,setThinking]=useState(false);
+  const bottomRef=useRef(null);
+  const chips=['Kenya scholarships','DAAD Germany','Rhodes Oxford','Chevening','Thesis types','PhD tips','Motivation letter','SISGP deadline'];
+  useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[messages]);
+  const send=(text)=>{
+    const msg=text||input.trim();
+    if(!msg) return;
+    setInput('');
+    setMessages(prev=>[...prev,{from:'user',text:msg}]);
+    setThinking(true);
+    setTimeout(()=>{setMessages(prev=>[...prev,{from:'bot',text:getAnswer(msg)}]);setThinking(false);},700);
+  };
+  const heading={en:'AI Assistant',sv:'AI-assistent',so:'Kalkaaliyaha AI',sw:'Msaidizi wa AI'};
+  return(
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <SectionHeader color='#4A1A8A' title={`🤖 ${heading[lang]||heading.en}`} sub='Powered by Geeddispn · Scholarships · Thesis · Writing'/>
+      <div style={{display:'flex',gap:6,overflowX:'auto',padding:'8px 12px 4px',background:'#FAF5FF',flexShrink:0}}>
+        {chips.map((s,i)=><button key={i} onClick={()=>send(s)} style={{flexShrink:0,padding:'5px 11px',borderRadius:20,border:'1.5px solid #C4B5FD',background:'#fff',color:'#6D28D9',fontSize:11,fontWeight:500,cursor:'pointer',whiteSpace:'nowrap'}}>{s}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+        {messages.map((m,i)=>(
+          <div key={i} style={{display:'flex',justifyContent:m.from==='user'?'flex-end':'flex-start'}}>
+            {m.from==='bot'&&<div style={{width:28,height:28,borderRadius:14,background:'#4A1A8A',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginRight:8,marginTop:2,fontSize:13}}>🤖</div>}
+            <div style={{maxWidth:'80%',background:m.from==='user'?'#6D28D9':'#fff',color:m.from==='user'?'#fff':'#333',borderRadius:m.from==='user'?'16px 16px 4px 16px':'4px 16px 16px 16px',padding:'10px 13px',fontSize:13,lineHeight:'20px',boxShadow:'0 1px 4px rgba(0,0,0,0.08)',whiteSpace:'pre-line'}}>{m.text}</div>
+          </div>
+        ))}
+        {thinking&&<div style={{display:'flex',gap:8}}><div style={{width:28,height:28,borderRadius:14,background:'#4A1A8A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>🤖</div><div style={{background:'#fff',borderRadius:'4px 16px 16px 16px',padding:'10px 14px',boxShadow:'0 1px 4px rgba(0,0,0,0.08)',display:'flex',gap:4}}>{[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:'50%',background:'#C4B5FD',animation:`bounce 1s ${i*0.2}s infinite`}}/>)}</div></div>}
+        <div ref={bottomRef}/>
+      </div>
+      <div style={{padding:'10px 12px 14px',background:'#fff',borderTop:'1px solid #EDE9FE',flexShrink:0,display:'flex',gap:8}}>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()}
+          placeholder={lang==='sw'?'Uliza swali…':lang==='so'?"Su'aal weydii…":lang==='sv'?'Ställ en fråga…':'Ask a question…'}
+          style={{flex:1,border:'1.5px solid #C4B5FD',borderRadius:24,padding:'10px 16px',fontSize:13,outline:'none',color:'#333'}}/>
+        <button onClick={()=>send()} style={{background:'#6D28D9',border:'none',borderRadius:24,padding:'10px 18px',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+          {lang==='sw'?'Tuma':lang==='so'?'Dir':lang==='sv'?'Skicka':'Send'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROOT
+// ══════════════════════════════════════════════════════════════════
+const TABS=['home','scholarships','guide','thesis','writing','chat'];
+const ICONS={home:'🏠',scholarships:'🎓',guide:'📋',thesis:'📝',writing:'✏️',chat:'🤖'};
+const TAB_LABEL={en:{home:'Home',scholarships:'Scholarships',guide:'Apply',thesis:'Thesis',writing:'Writing',chat:'AI'},sv:{home:'Hem',scholarships:'Stipendier',guide:'Ansök',thesis:'Uppsats',writing:'Skriv',chat:'AI'},so:{home:'Guriga',scholarships:'Deeqaha',guide:'Codsiga',thesis:'Buugga',writing:'Qorista',chat:'AI'},sw:{home:'Nyumbani',scholarships:'Ufadhili',guide:'Omba',thesis:'Tasnifu',writing:'Andika',chat:'AI'}};
+
+function App(){
+  const [lang,setLang]=useState('en');
+  const [tab,setTab]=useState('home');
+  const t={}; // placeholder for context
+  return(
+    <LangCtx.Provider value={{lang,setLang,t}}>
+      <style>{`@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}`}</style>
+      <div style={{display:'flex',flexDirection:'column',height:'100%',minHeight:'100vh'}}>
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',paddingBottom:58}}>
+          {tab==='home'         &&<HomeScreen setTab={setTab}/>}
+          {tab==='scholarships' &&<ScholarshipsScreen/>}
+          {tab==='guide'        &&<GuideScreen/>}
+          {tab==='thesis'       &&<ThesisScreen/>}
+          {tab==='writing'      &&<WritingScreen/>}
+          {tab==='chat'         &&<ChatScreen/>}
+        </div>
+        <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:'#fff',borderTop:'1px solid #E8E0FF',display:'flex',height:58,zIndex:100}}>
+          {TABS.map(t2=>{
+            const lbl=(TAB_LABEL[lang]||TAB_LABEL.en)[t2];
+            return(
+              <button key={t2} onClick={()=>setTab(t2)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',border:'none',background:tab===t2?'#F5F0FF':'transparent',cursor:'pointer',gap:1,padding:'6px 0'}}>
+                <span style={{fontSize:tab===t2?19:16}}>{ICONS[t2]}</span>
+                <span style={{fontSize:8,color:tab===t2?'#6D28D9':'#999',fontWeight:tab===t2?700:400}}>{lbl}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </LangCtx.Provider>
+  );
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+</body>
+</html>
